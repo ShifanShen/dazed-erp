@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dazed ERP (Bar) - Demo</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 24px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    input, select, button, textarea { padding: 8px; }
+    button { cursor: pointer; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-top: 16px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { border: 1px solid #eee; padding: 8px; text-align: left; }
+    th { background: #fafafa; }
+    .muted { color: #666; font-size: 12px; }
+    .error { color: #b00020; }
+    .ok { color: #0a7; }
+  </style>
+</head>
+<body>
+  <h2>Dazed ERP（酒吧多门店盘点）Demo</h2>
+  <div class="muted">这是临时前端（纯 HTML + fetch）。后续替换为 React 时，API 不用改。</div>
+
+  <div class="card">
+    <h3>1) 登录</h3>
+    <div class="row">
+      <input id="username" placeholder="username" value="admin" />
+      <input id="password" placeholder="password" type="password" value="admin123" />
+      <button onclick="login()">登录</button>
+      <span id="loginStatus" class="muted"></span>
+    </div>
+    <div class="muted">
+      默认账号：admin/admin123；manager1/manager123（仅门店 S001）；clerk1/clerk123（仅门店 S001）
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>2) 门店</h3>
+    <div class="row">
+      <button onclick="loadStores()">刷新门店列表</button>
+      <select id="storeSelect" onchange="onStoreChanged()"></select>
+      <span class="muted">非 ADMIN 只能看到自己被分配的门店</span>
+    </div>
+    <div id="storeError" class="error"></div>
+  </div>
+
+  <div class="card">
+    <h3>3) 库存（当前系统数量）</h3>
+    <div class="row">
+      <button onclick="loadInventory()">刷新库存</button>
+      <span id="invStatus" class="muted"></span>
+    </div>
+    <div id="inventory"></div>
+  </div>
+
+  <div class="card">
+    <h3>4) 创建并提交盘点（会直接把库存更新为盘点数量）</h3>
+    <div class="row">
+      <textarea id="note" rows="2" cols="40" placeholder="备注（可选）"></textarea>
+      <button onclick="createAndSubmitStocktake()">一键盘点提交</button>
+      <span id="stStatus" class="muted"></span>
+    </div>
+    <div class="muted">为了演示简单：盘点数量 = 当前库存数量 + 1（每个商品都+1）。你也可以在后端 API 自己传入 countedQty。</div>
+  </div>
+
+  <div class="card">
+    <h3>5) 盘点记录</h3>
+    <div class="row">
+      <button onclick="loadStocktakes()">刷新盘点记录</button>
+      <span id="stListStatus" class="muted"></span>
+    </div>
+    <div id="stocktakes"></div>
+  </div>
+
+  <script>
+    const state = {
+      token: null,
+      storeId: null,
+      stores: []
+    };
+
+    function api(path, options = {}) {
+      const headers = options.headers || {};
+      headers["Content-Type"] = "application/json";
+      if (state.token) headers["Authorization"] = "Bearer " + state.token;
+      return fetch(path, { ...options, headers });
+    }
+
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const status = document.getElementById("loginStatus");
+      status.textContent = "登录中...";
+      try {
+        const res = await api("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        state.token = data.token;
+        status.className = "ok";
+        status.textContent = `OK：${data.displayName} (${data.role})`;
+        await loadStores();
+      } catch (e) {
+        status.className = "error";
+        status.textContent = "登录失败：" + e;
+      }
+    }
+
+    async function loadStores() {
+      const err = document.getElementById("storeError");
+      err.textContent = "";
+      try {
+        const res = await api("/api/stores");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const list = await res.json();
+        state.stores = list;
+        const sel = document.getElementById("storeSelect");
+        sel.innerHTML = "";
+        list.forEach(s => {
+          const opt = document.createElement("option");
+          opt.value = s.id;
+          opt.textContent = `${s.code} - ${s.name}`;
+          sel.appendChild(opt);
+        });
+        if (list.length > 0) {
+          state.storeId = list[0].id;
+          sel.value = state.storeId;
+          await loadInventory();
+          await loadStocktakes();
+        }
+      } catch (e) {
+        err.textContent = "加载门店失败：" + e;
+      }
+    }
+
+    async function onStoreChanged() {
+      const sel = document.getElementById("storeSelect");
+      state.storeId = Number(sel.value);
+      await loadInventory();
+      await loadStocktakes();
+    }
+
+    function renderTable(rows, columns) {
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      columns.forEach(c => {
+        const th = document.createElement("th");
+        th.textContent = c;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        columns.forEach(c => {
+          const td = document.createElement("td");
+          td.textContent = r[c] ?? "";
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      return table;
+    }
+
+    async function loadInventory() {
+      const wrap = document.getElementById("inventory");
+      const status = document.getElementById("invStatus");
+      wrap.innerHTML = "";
+      status.textContent = "加载中...";
+      try {
+        const res = await api(`/api/stores/${state.storeId}/inventory`);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const rows = await res.json();
+        const display = rows.map(r => ({
+          sku: r.sku,
+          name: r.name,
+          unit: r.unit,
+          quantity: r.quantity
+        }));
+        wrap.appendChild(renderTable(display, ["sku", "name", "unit", "quantity"]));
+        status.textContent = "OK";
+      } catch (e) {
+        status.textContent = "";
+        wrap.innerHTML = `<div class="error">加载库存失败：${e}</div>`;
+      }
+    }
+
+    async function createAndSubmitStocktake() {
+      const status = document.getElementById("stStatus");
+      status.textContent = "创建中...";
+      try {
+        const invRes = await api(`/api/stores/${state.storeId}/inventory`);
+        if (!invRes.ok) throw new Error("HTTP " + invRes.status);
+        const inv = await invRes.json();
+        const items = inv.map(r => ({ productId: r.productId, countedQty: Number(r.quantity) + 1 }));
+        const note = document.getElementById("note").value || null;
+        const res = await api(`/api/stores/${state.storeId}/stocktakes`, {
+          method: "POST",
+          body: JSON.stringify({ note, items, submit: true })
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        await res.json();
+        status.textContent = "OK（已提交并更新库存）";
+        await loadInventory();
+        await loadStocktakes();
+      } catch (e) {
+        status.textContent = "失败：" + e;
+      }
+    }
+
+    async function loadStocktakes() {
+      const wrap = document.getElementById("stocktakes");
+      const status = document.getElementById("stListStatus");
+      wrap.innerHTML = "";
+      status.textContent = "加载中...";
+      try {
+        const res = await api(`/api/stores/${state.storeId}/stocktakes`);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const list = await res.json();
+        const display = list.map(s => ({
+          id: s.id,
+          status: s.status,
+          note: s.note,
+          createdAt: s.createdAt,
+          submittedAt: s.submittedAt
+        }));
+        wrap.appendChild(renderTable(display, ["id", "status", "note", "createdAt", "submittedAt"]));
+        status.textContent = "OK";
+      } catch (e) {
+        status.textContent = "";
+        wrap.innerHTML = `<div class="error">加载盘点失败：${e}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
+
