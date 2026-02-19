@@ -1,0 +1,85 @@
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.back-link {
+  color: #333;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.inventory h2 {
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.inventory-table {
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.inventory-table thead {
+  background: #f8f9fa;
+}
+
+.inventory-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #eee;
+}
+
+.inventory-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  color: #555;
+}
+
+.inventory-table tr:last-child td {
+  border-bottom: none;
+}
+
+.inventory-table tr:hover {
+  background: #f8f9fa;
+}
+
+.quantity {
+  font-weight: 600;
+  color: #333;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: #f39c12;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #e67e22;
+}

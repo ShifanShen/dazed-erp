@@ -1,0 +1,78 @@
+.sales {
+  padding: 20px;
+}
+
+.sales .filters {
+  margin-bottom: 20px;
+}
+
+.sales .filters select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+.sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sales-table th,
+.sales-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.sales-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+.sales-table .status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sales-table .status-draft {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.sales-table .status-submitted {
+  background: #d4edda;
+  color: #155724;
+}
+
+.sales-table .status-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.item-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.item-row select,
+.item-row input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.item-row .stock-info {
+  padding: 4px 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
