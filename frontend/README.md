@@ -1,4 +1,4 @@
-# 酒吧 ERP 前端（React + Vite）
+# Dazed ERP 前端（React + Vite）
 
 ## 🚀 快速开始
 

@@ -31,7 +31,9 @@ public class CorsConfig {
             "http://localhost:8080",      // 本地开发（网页前端）
             "http://127.0.0.1:8080",      // 本地开发（备用）
             "http://localhost:5173",      // Vite 开发服务器
-            "http://127.0.0.1:5173"       // Vite 开发服务器（备用）
+            "http://127.0.0.1:5173",      // Vite 开发服务器（备用）
+            "http://localhost:5174",      // Vite 开发服务器（端口占用时自动切换）
+            "http://127.0.0.1:5174"       // Vite 开发服务器（备用）
         ));
         
         // 允许的 HTTP 方法
