@@ -46,12 +46,8 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ProductDto get(@PathVariable Long id) {
-        Product p = products.findById(id)
+        Product p = products.findByIdWithCategory(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + id));
-        // Force load category if lazy
-        if (p.getCategory() != null) {
-            p.getCategory().getName();
-        }
         return ProductDto.from(p);
     }
 
