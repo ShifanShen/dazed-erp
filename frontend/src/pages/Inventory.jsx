@@ -1,23 +1,40 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getInventory } from '../api/inventory'
+import { getCategories } from '../api/categories'
 import { exportLowStock } from '../api/export'
 import './Inventory.css'
 
 function Inventory() {
   const { storeId } = useParams()
   const [inventory, setInventory] = useState([])
+  const [categories, setCategories] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    loadCategories()
+  }, [])
+
+  useEffect(() => {
     loadInventory()
-  }, [storeId])
+  }, [storeId, selectedCategory])
+
+  const loadCategories = async () => {
+    try {
+      const data = await getCategories()
+      setCategories(data)
+    } catch (err) {
+      console.error('Failed to load categories', err)
+    }
+  }
 
   const loadInventory = async () => {
     try {
       setLoading(true)
-      const data = await getInventory(storeId)
+      const categoryId = selectedCategory ? parseInt(selectedCategory) : null
+      const data = await getInventory(storeId, categoryId)
       setInventory(data)
       setError('')
     } catch (err) {
@@ -27,12 +44,8 @@ function Inventory() {
     }
   }
 
-  if (loading) {
-    return <div className="loading">加载中...</div>
-  }
-
-  if (error) {
-    return <div className="error">错误：{error}</div>
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value)
   }
 
   return (
@@ -67,8 +80,28 @@ function Inventory() {
         </div>
       </div>
       <h2>库存列表</h2>
-      {inventory.length === 0 ? (
-        <div className="empty">暂无库存数据</div>
+      
+      <div className="filter-bar">
+        <label>
+          按类目筛选：
+          <select value={selectedCategory} onChange={handleCategoryChange}>
+            <option value="">全部类目</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </label>
+        <span className="inventory-count">共 {inventory.length} 条记录</span>
+      </div>
+
+      {loading ? (
+        <div className="loading">加载中...</div>
+      ) : error ? (
+        <div className="error">错误：{error}</div>
+      ) : inventory.length === 0 ? (
+        <div className="empty">
+          {selectedCategory ? '该类目下暂无库存数据' : '暂无库存数据'}
+        </div>
       ) : (
         <table className="inventory-table">
           <thead>
