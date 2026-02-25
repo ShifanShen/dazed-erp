@@ -25,5 +25,16 @@ public interface InventoryStockRepository extends JpaRepository<InventoryStock, 
             where st.store.id = :storeId and st.product.id = :productId
             """)
     Optional<InventoryStock> findOne(@Param("storeId") Long storeId, @Param("productId") Long productId);
+
+    @Query("""
+            select st
+            from InventoryStock st
+            join fetch st.product p
+            left join fetch p.category c
+            where st.store.id = :storeId
+            and (:categoryId is null or c.id = :categoryId)
+            order by p.name
+            """)
+    List<InventoryStock> findByStoreIdAndCategory(@Param("storeId") Long storeId, @Param("categoryId") Long categoryId);
 }
 

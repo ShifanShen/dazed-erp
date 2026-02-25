@@ -42,9 +42,12 @@ public class InventoryController {
     }
 
     @GetMapping("/inventory")
-    public List<InventoryRow> inventory(@PathVariable Long storeId, Authentication auth) {
+    public List<InventoryRow> inventory(@PathVariable Long storeId, @RequestParam(required = false) Long categoryId, Authentication auth) {
         storeAccess.assertCanAccessStore(auth, storeId);
-        return stockRepo.findByStoreIdWithProduct(storeId).stream().map(InventoryRow::from).toList();
+        List<InventoryStock> stocks = categoryId != null 
+            ? stockRepo.findByStoreIdAndCategory(storeId, categoryId)
+            : stockRepo.findByStoreIdWithProduct(storeId);
+        return stocks.stream().map(InventoryRow::from).toList();
     }
 
     public record StocktakeItemReq(@NotNull Long productId, @NotNull BigDecimal countedQty) {
