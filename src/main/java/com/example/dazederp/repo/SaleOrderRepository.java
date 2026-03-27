@@ -11,9 +11,29 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
-    List<SaleOrder> findByStoreIdOrderByCreatedAtDesc(Long storeId);
-    
-    List<SaleOrder> findByStoreIdAndStatusOrderByCreatedAtDesc(Long storeId, SaleOrderStatus status);
+    @Query("""
+            select distinct so
+            from SaleOrder so
+            left join fetch so.createdBy cb
+            left join fetch so.items items
+            left join fetch items.product product
+            where so.store.id = :storeId
+            order by so.createdAt desc
+            """)
+    List<SaleOrder> findByStoreIdOrderByCreatedAtDesc(@Param("storeId") Long storeId);
+
+    @Query("""
+            select distinct so
+            from SaleOrder so
+            left join fetch so.createdBy cb
+            left join fetch so.items items
+            left join fetch items.product product
+            where so.store.id = :storeId
+            and so.status = :status
+            order by so.createdAt desc
+            """)
+    List<SaleOrder> findByStoreIdAndStatusOrderByCreatedAtDesc(@Param("storeId") Long storeId,
+                                                               @Param("status") SaleOrderStatus status);
     
     Optional<SaleOrder> findByOrderNo(String orderNo);
     

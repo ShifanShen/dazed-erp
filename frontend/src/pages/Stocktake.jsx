@@ -1,105 +1,66 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { exportStocktakeShortage } from '../api/export'
 import { getInventory } from '../api/inventory'
 import { createStocktake, getStocktakes } from '../api/stocktake'
-import { exportStocktakeShortage } from '../api/export'
 import './Stocktake.css'
+
+const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+function toWholeNumber(value) {
+  const parsed = Number.parseInt(value, 10)
+  return Number.isNaN(parsed) ? 0 : Math.max(0, parsed)
+}
+
+function formatDateTime(value) {
+  return value ? dateTimeFormatter.format(new Date(value)) : '-'
+}
 
 function Stocktake() {
   const { storeId } = useParams()
-  const navigate = useNavigate()
   const [inventory, setInventory] = useState([])
   const [items, setItems] = useState([])
   const [stocktakes, setStocktakes] = useState([])
   const [note, setNote] = useState('')
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [viewMode, setViewMode] = useState('create') // 'create' or 'history'
+  const [viewMode, setViewMode] = useState('create')
 
   useEffect(() => {
     loadInventory()
     loadStocktakes()
   }, [storeId])
 
+  const initializeItems = (data) => (
+    data.map((item) => {
+      const currentQty = toWholeNumber(item.quantity)
+      return {
+        productId: item.productId,
+        productName: item.productName,
+        sku: item.sku,
+        unit: item.unit,
+        currentQty,
+        countedQty: currentQty,
+      }
+    })
+  )
+
   const loadInventory = async () => {
     try {
       setLoading(true)
       const data = await getInventory(storeId)
       setInventory(data)
-      // 初始化盘点项：默认盘点数量 = 当前库存
-      setItems(
-        data.map((item) => ({
-          productId: item.productId,
-          productName: item.productName,
-          unit: item.unit,
-          currentQty: item.quantity,
-          countedQty: item.quantity,
-        }))
-      )
+      setItems(initializeItems(data))
       setError('')
     } catch (err) {
       setError(err.response?.data?.message || '加载库存失败')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const updateCountedQty = (productId, value) => {
-    const numValue = parseFloat(value) || 0
-    setItems(
-      items.map((item) =>
-        item.productId === productId
-          ? { ...item, countedQty: numValue }
-          : item
-      )
-    )
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-
-    // 验证：至少有一个商品有盘点数量
-    const hasCountedItems = items.some((item) => item.countedQty > 0)
-    if (!hasCountedItems) {
-      setError('请至少盘点一个商品')
-      return
-    }
-
-    try {
-      setSubmitting(true)
-      const stocktakeItems = items
-        .filter((item) => item.countedQty > 0)
-        .map((item) => ({
-          productId: item.productId,
-          countedQty: item.countedQty,
-        }))
-
-      await createStocktake(storeId, {
-        note: note || '盘点',
-        submit: true,
-        items: stocktakeItems,
-      })
-
-      // 成功，刷新数据
-      loadInventory()
-      loadStocktakes()
-      setNote('')
-      setItems(inventory.map((item) => ({
-        productId: item.productId,
-        productName: item.productName,
-        unit: item.unit,
-        currentQty: item.quantity,
-        countedQty: item.quantity,
-      })))
-      alert('盘点提交成功！')
-    } catch (err) {
-      setError(
-        err.response?.data?.message || '提交盘点失败，请重试'
-      )
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -109,6 +70,69 @@ function Stocktake() {
       setStocktakes(data)
     } catch (err) {
       console.error('Failed to load stocktakes', err)
+    }
+  }
+
+  const updateCountedQty = (productId, value) => {
+    const nextQty = toWholeNumber(value)
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.productId === productId
+          ? { ...item, countedQty: nextQty }
+          : item
+      )
+    )
+  }
+
+  const filteredItems = useMemo(() => {
+    if (!search.trim()) {
+      return items
+    }
+    const keyword = search.trim().toLowerCase()
+    return items.filter((item) =>
+      item.productName?.toLowerCase().includes(keyword) ||
+      item.sku?.toLowerCase().includes(keyword)
+    )
+  }, [items, search])
+
+  const changedCount = items.filter((item) => item.countedQty !== item.currentQty).length
+  const shortageCount = items.filter((item) => item.countedQty < item.currentQty).length
+
+  const resetStocktake = () => {
+    setNote('')
+    setSearch('')
+    setItems(initializeItems(inventory))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (items.length === 0) {
+      setError('暂无可盘点商品')
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const stocktakeItems = items.map((item) => ({
+        productId: item.productId,
+        countedQty: item.countedQty,
+      }))
+
+      await createStocktake(storeId, {
+        note: note || '盘点',
+        submit: true,
+        items: stocktakeItems,
+      })
+
+      await Promise.all([loadInventory(), loadStocktakes()])
+      resetStocktake()
+      alert('盘点提交成功！')
+    } catch (err) {
+      setError(err.response?.data?.message || '提交盘点失败，请重试')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -125,11 +149,16 @@ function Stocktake() {
   }
 
   return (
-    <div className="stocktake">
+    <div className="stocktake-page">
       <div className="stocktake-header">
-        <Link to={`/stores/${storeId}/inventory`} className="back-link">
-          ← 返回库存列表
-        </Link>
+        <div>
+          <Link to={`/stores/${storeId}/inventory`} className="stocktake-page__back-link">
+            ← 返回库存总览
+          </Link>
+          <span className="stocktake-page__eyebrow">库存盘点</span>
+          <h2>盘点数量统一按整数录入</h2>
+          <p className="stocktake-page__subtitle">录入更接近现场操作，手机端直接改数字，提交后库存会自动调整。</p>
+        </div>
         <div className="view-tabs">
           <button
             className={`tab ${viewMode === 'create' ? 'active' : ''}`}
@@ -145,11 +174,33 @@ function Stocktake() {
           </button>
         </div>
       </div>
-      <h2>库存盘点</h2>
+
+      <div className="stocktake-page__summary">
+        <article className="stocktake-page__stat-card">
+          <span>盘点商品</span>
+          <strong>{items.length}</strong>
+          <small>当前门店库存项</small>
+        </article>
+        <article className="stocktake-page__stat-card">
+          <span>有差异</span>
+          <strong>{changedCount}</strong>
+          <small>盘点数和系统数不同</small>
+        </article>
+        <article className="stocktake-page__stat-card stocktake-page__stat-card--warning">
+          <span>短缺项</span>
+          <strong>{shortageCount}</strong>
+          <small>盘点数低于系统数</small>
+        </article>
+      </div>
 
       {viewMode === 'history' ? (
         <div className="stocktake-history">
-          <table className="stocktake-table">
+          <div className="stocktake-page__card-header">
+            <h3>盘点记录</h3>
+            <span>{stocktakes.length} 条</span>
+          </div>
+
+          <table className="stocktake-table stocktake-table--desktop">
             <thead>
               <tr>
                 <th>盘点单号</th>
@@ -161,26 +212,26 @@ function Stocktake() {
               </tr>
             </thead>
             <tbody>
-              {stocktakes.map((st) => {
-                const shortageItems = st.items.filter(item => item.diffQty < 0)
+              {stocktakes.map((stocktake) => {
+                const shortageItems = stocktake.items.filter((item) => item.diffQty < 0)
                 return (
-                  <tr key={st.id}>
-                    <td>#{st.id}</td>
-                    <td>{st.note || '-'}</td>
+                  <tr key={stocktake.id}>
+                    <td>#{stocktake.id}</td>
+                    <td>{stocktake.note || '-'}</td>
                     <td>
-                      <span className={`status status-${st.status.toLowerCase()}`}>
-                        {st.status === 'DRAFT' ? '草稿' : '已提交'}
+                      <span className={`stocktake-page__status stocktake-page__status--${stocktake.status.toLowerCase()}`}>
+                        {stocktake.status === 'DRAFT' ? '草稿' : '已提交'}
                       </span>
                     </td>
-                    <td>{new Date(st.createdAt).toLocaleString('zh-CN')}</td>
-                    <td>{st.submittedAt ? new Date(st.submittedAt).toLocaleString('zh-CN') : '-'}</td>
+                    <td>{formatDateTime(stocktake.createdAt)}</td>
+                    <td>{formatDateTime(stocktake.submittedAt)}</td>
                     <td>
-                      {st.status === 'SUBMITTED' && shortageItems.length > 0 && (
+                      {stocktake.status === 'SUBMITTED' && shortageItems.length > 0 && (
                         <button
-                          className="btn btn-small btn-primary"
-                          onClick={() => handleExportShortage(st.id)}
+                          className="btn btn-small btn-secondary"
+                          onClick={() => handleExportShortage(stocktake.id)}
                         >
-                          导出短缺商品
+                          导出短缺
                         </button>
                       )}
                     </td>
@@ -189,68 +240,155 @@ function Stocktake() {
               })}
             </tbody>
           </table>
+
+          <div className="stocktake-page__mobile-list">
+            {stocktakes.map((stocktake) => {
+              const shortageItems = stocktake.items.filter((item) => item.diffQty < 0)
+              return (
+                <article key={stocktake.id} className="stocktake-page__mobile-card">
+                  <div className="stocktake-page__mobile-top">
+                    <strong>盘点单 #{stocktake.id}</strong>
+                    <span className={`stocktake-page__status stocktake-page__status--${stocktake.status.toLowerCase()}`}>
+                      {stocktake.status === 'DRAFT' ? '草稿' : '已提交'}
+                    </span>
+                  </div>
+                  <p>{stocktake.note || '无备注'}</p>
+                  <div className="stocktake-page__mobile-meta">
+                    <span>创建：{formatDateTime(stocktake.createdAt)}</span>
+                    <span>提交：{formatDateTime(stocktake.submittedAt)}</span>
+                  </div>
+                  {stocktake.status === 'SUBMITTED' && shortageItems.length > 0 && (
+                    <button
+                      className="btn btn-small btn-secondary"
+                      onClick={() => handleExportShortage(stocktake.id)}
+                    >
+                      导出短缺商品
+                    </button>
+                  )}
+                </article>
+              )
+            })}
+          </div>
         </div>
       ) : (
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>备注</label>
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="例如：晚班盘点"
-          />
-        </div>
-        {error && <div className="error-message">{error}</div>}
-        <div className="stocktake-items">
-          <table className="stocktake-table">
-            <thead>
-              <tr>
-                <th>商品名称</th>
-                <th>单位</th>
-                <th>当前库存</th>
-                <th>盘点数量</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.productId}>
-                  <td>{item.productName}</td>
-                  <td>{item.unit}</td>
-                  <td className="current-qty">{item.currentQty}</td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.countedQty}
-                      onChange={(e) =>
-                        updateCountedQty(item.productId, e.target.value)
-                      }
-                      className="qty-input"
-                    />
-                  </td>
+        <form onSubmit={handleSubmit} className="stocktake-page__form">
+          <div className="stocktake-page__toolbar">
+            <label className="form-group">
+              <span>备注</span>
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="例如：晚班盘点"
+              />
+            </label>
+            <label className="form-group">
+              <span>搜索商品</span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="按商品名或 SKU 搜索"
+              />
+            </label>
+          </div>
+
+          {error && <div className="error-message">{error}</div>}
+
+          <div className="stocktake-items">
+            <table className="stocktake-table stocktake-table--desktop">
+              <thead>
+                <tr>
+                  <th>商品名称</th>
+                  <th>SKU</th>
+                  <th>当前库存</th>
+                  <th>盘点数量</th>
+                  <th>差异</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="form-actions">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="btn btn-primary"
-          >
-            {submitting ? '提交中...' : '提交盘点'}
-          </button>
-          <Link
-            to={`/stores/${storeId}/inventory`}
-            className="btn btn-secondary"
-          >
-            取消
-          </Link>
-        </div>
-      </form>
+              </thead>
+              <tbody>
+                {filteredItems.map((item) => {
+                  const diff = item.countedQty - item.currentQty
+                  return (
+                    <tr key={item.productId}>
+                      <td>{item.productName}</td>
+                      <td>{item.sku}</td>
+                      <td className="current-qty">{item.currentQty}</td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="numeric"
+                          value={item.countedQty}
+                          onChange={(e) => updateCountedQty(item.productId, e.target.value)}
+                          className="qty-input"
+                        />
+                      </td>
+                      <td className={diff === 0 ? '' : diff > 0 ? 'stocktake-page__diff--up' : 'stocktake-page__diff--down'}>
+                        {diff > 0 ? `+${diff}` : diff}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+
+            <div className="stocktake-page__mobile-list">
+              {filteredItems.map((item) => {
+                const diff = item.countedQty - item.currentQty
+                return (
+                  <article key={item.productId} className="stocktake-page__mobile-card">
+                    <div className="stocktake-page__mobile-top">
+                      <div>
+                        <strong>{item.productName}</strong>
+                        <span>{item.sku}</span>
+                      </div>
+                      <span className={`stocktake-page__diff-badge ${diff > 0 ? 'stocktake-page__diff-badge--up' : diff < 0 ? 'stocktake-page__diff-badge--down' : ''}`}>
+                        {diff > 0 ? `+${diff}` : diff}
+                      </span>
+                    </div>
+                    <div className="stocktake-page__mobile-grid">
+                      <div>
+                        <label>当前库存</label>
+                        <b>{item.currentQty}</b>
+                      </div>
+                      <div>
+                        <label>盘点数量</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="numeric"
+                          value={item.countedQty}
+                          onChange={(e) => updateCountedQty(item.productId, e.target.value)}
+                          className="qty-input"
+                        />
+                      </div>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="stocktake-page__submit-bar">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={resetStocktake}
+            >
+              恢复默认
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn btn-primary"
+            >
+              {submitting ? '提交中...' : '提交盘点'}
+            </button>
+          </div>
+        </form>
       )}
     </div>
   )

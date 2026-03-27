@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuth, getToken } from '../utils/authStorage'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api'
 
@@ -12,7 +13,7 @@ const client = axios.create({
 // 请求拦截器：自动添加 token
 client.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = getToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -29,8 +30,7 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // token 过期，清除本地存储并跳转登录
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      clearAuth()
       window.location.href = '/login'
     }
     return Promise.reject(error)

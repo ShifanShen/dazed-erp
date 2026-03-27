@@ -64,5 +64,9 @@ public class InventoryStock {
     public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 }
 

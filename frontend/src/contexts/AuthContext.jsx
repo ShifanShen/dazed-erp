@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { login as apiLogin } from '../api/auth'
+import { clearAuth, getStoredUser, getToken, setStoredUser, setToken } from '../utils/authStorage'
 
 const AuthContext = createContext(null)
 
@@ -9,16 +10,10 @@ export function AuthProvider({ children }) {
 
   // 初始化时从 localStorage 恢复用户信息
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    const token = localStorage.getItem('token')
+    const storedUser = getStoredUser()
+    const token = getToken()
     if (storedUser && token) {
-      try {
-        setUser(JSON.parse(storedUser))
-      } catch (e) {
-        console.error('Failed to parse user from localStorage', e)
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-      }
+      setUser(storedUser)
     }
     setLoading(false)
   }, [])
@@ -30,15 +25,14 @@ export function AuthProvider({ children }) {
       displayName: response.displayName,
       role: response.role,
     }
-    localStorage.setItem('token', response.token)
-    localStorage.setItem('user', JSON.stringify(userData))
+    setToken(response.token)
+    setStoredUser(userData)
     setUser(userData)
     return response
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    clearAuth()
     setUser(null)
   }
 

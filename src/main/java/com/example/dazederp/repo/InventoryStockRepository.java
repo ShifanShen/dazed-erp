@@ -14,6 +14,7 @@ public interface InventoryStockRepository extends JpaRepository<InventoryStock, 
             select st
             from InventoryStock st
             join fetch st.product p
+            left join fetch p.category c
             where st.store.id = :storeId
             order by p.id
             """)

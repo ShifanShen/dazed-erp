@@ -15,6 +15,11 @@ export const createStockIn = async (storeId, data) => {
   return response.data
 }
 
+export const updateStockIn = async (storeId, id, data) => {
+  const response = await client.put(`/stores/${storeId}/stock-in/${id}`, data)
+  return response.data
+}
+
 export const submitStockIn = async (storeId, id) => {
   const response = await client.post(`/stores/${storeId}/stock-in/${id}/submit`)
   return response.data

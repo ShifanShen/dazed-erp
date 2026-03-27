@@ -16,6 +16,11 @@ export const createSale = async (storeId, data) => {
   return response.data
 }
 
+export const updateSale = async (storeId, id, data) => {
+  const response = await apiClient.put(`/stores/${storeId}/sales/${id}`, data)
+  return response.data
+}
+
 export const submitSale = async (storeId, id) => {
   const response = await apiClient.post(`/stores/${storeId}/sales/${id}/submit`)
   return response.data

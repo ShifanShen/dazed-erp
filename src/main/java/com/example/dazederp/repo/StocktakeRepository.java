@@ -9,8 +9,10 @@ import java.util.List;
 
 public interface StocktakeRepository extends JpaRepository<Stocktake, Long> {
     @Query("""
-            select s
+            select distinct s
             from Stocktake s
+            left join fetch s.items items
+            left join fetch items.product product
             where s.store.id = :storeId
             order by s.id desc
             """)

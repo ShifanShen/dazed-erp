@@ -1,106 +1,206 @@
+.stocktake-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
 .stocktake-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.stocktake-page__back-link {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.stocktake-page__back-link:hover {
+  text-decoration: underline;
+}
+
+.stocktake-page__eyebrow {
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 1.5rem;
+  padding: 0.38rem 0.74rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.stocktake-page h2 {
+  margin: 0.9rem 0 0;
+  color: var(--text-primary);
+}
+
+.stocktake-page__subtitle {
+  margin: 0.55rem 0 0;
+  color: var(--text-secondary);
+  line-height: 1.75;
 }
 
 .view-tabs {
-  display: flex;
-  gap: 0.5rem;
+  display: inline-flex;
+  gap: 0.6rem;
+  padding: 0.4rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .tab {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 6px;
+  padding: 0.72rem 1rem;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.3s;
+  color: var(--text-secondary);
+  font-weight: 700;
+  transition: all var(--transition-fast);
 }
 
 .tab:hover {
-  background: #f5f5f5;
+  color: var(--text-primary);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .tab.active {
-  background: #333;
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
   color: white;
-  border-color: #333;
+  box-shadow: 0 16px 26px rgba(37, 99, 235, 0.2);
 }
 
-.stocktake-history {
-  background: white;
-  border-radius: 8px;
+.stocktake-page__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stocktake-page__stat-card {
+  padding: 1.2rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-soft);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 245, 255, 0.82));
+  box-shadow: var(--shadow-md);
+}
+
+.stocktake-page__stat-card span,
+.stocktake-page__stat-card small {
+  color: var(--text-secondary);
+}
+
+.stocktake-page__stat-card strong {
+  display: block;
+  margin: 0.5rem 0;
+  font-size: 1.85rem;
+  color: var(--text-primary);
+}
+
+.stocktake-page__stat-card--warning {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 219, 0.88));
+}
+
+.stocktake-history,
+.stocktake-items {
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 22px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-md);
 }
 
-.stocktake h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
+.stocktake-page__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.78);
+}
+
+.stocktake-page__card-header h3 {
+  margin: 0;
+}
+
+.stocktake-page__card-header span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.stocktake-page__toolbar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stocktake-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #555;
-  font-weight: 500;
+.form-group span {
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .form-group input {
   width: 100%;
-  max-width: 400px;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
 }
 
-.form-group input:focus {
-  outline: none;
-  border-color: #333;
+.form-group input:focus,
+.qty-input:focus {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
 .error-message {
-  color: #e74c3c;
-  background: #fee;
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-}
-
-.stocktake-items {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  color: var(--danger);
+  background: var(--danger-soft);
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(225, 29, 72, 0.14);
 }
 
 .stocktake-table {
   width: 100%;
-}
-
-.stocktake-table thead {
-  background: #f8f9fa;
+  border-collapse: collapse;
 }
 
 .stocktake-table th {
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   text-align: left;
-  font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #eee;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .stocktake-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+  color: var(--text-primary);
+}
+
+.stocktake-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.04);
 }
 
 .stocktake-table tr:last-child td {
@@ -108,58 +208,180 @@
 }
 
 .current-qty {
-  color: #666;
-  font-weight: 500;
+  color: var(--text-secondary);
+  font-weight: 700;
 }
 
 .qty-input {
-  width: 100px;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  width: 100%;
+  max-width: 120px;
+  padding: 0.72rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 12px;
   text-align: center;
+  background: rgba(255, 255, 255, 0.94);
 }
 
-.qty-input:focus {
-  outline: none;
-  border-color: #333;
+.stocktake-page__diff--up {
+  color: var(--success);
+  font-weight: 800;
 }
 
-.form-actions {
+.stocktake-page__diff--down {
+  color: var(--danger);
+  font-weight: 800;
+}
+
+.stocktake-page__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.36rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.stocktake-page__status--draft {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--accent);
+}
+
+.stocktake-page__status--submitted {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.stocktake-page__submit-bar {
+  position: sticky;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  z-index: 5;
   display: flex;
-  gap: 1rem;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(18px);
 }
 
-.form-actions .btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  text-decoration: none;
-  text-align: center;
-  transition: all 0.3s;
+.stocktake-page__mobile-list {
+  display: none;
 }
 
-.form-actions .btn-primary {
-  background: #f39c12;
-  color: white;
+@media (max-width: 1024px) {
+  .stocktake-page__summary {
+    grid-template-columns: 1fr;
+  }
 }
 
-.form-actions .btn-primary:hover:not(:disabled) {
-  background: #e67e22;
-}
+@media (max-width: 768px) {
+  .stocktake-header,
+  .stocktake-page__toolbar {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
 
-.form-actions .btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+  .stocktake-header {
+    display: flex;
+    flex-direction: column;
+  }
 
-.form-actions .btn-secondary {
-  background: #95a5a6;
-  color: white;
-}
+  .view-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
 
-.form-actions .btn-secondary:hover {
-  background: #7f8c8d;
+  .stocktake-table--desktop {
+    display: none;
+  }
+
+  .stocktake-page__mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .stocktake-page__mobile-card {
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(248, 251, 255, 0.96);
+    border: 1px solid rgba(96, 165, 250, 0.12);
+  }
+
+  .stocktake-page__mobile-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .stocktake-page__mobile-top strong {
+    display: block;
+  }
+
+  .stocktake-page__mobile-top span:not(.stocktake-page__diff-badge):not(.stocktake-page__status) {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .stocktake-page__mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+  }
+
+  .stocktake-page__mobile-grid label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  .stocktake-page__mobile-grid b {
+    display: block;
+    margin-top: 0.22rem;
+    color: var(--text-primary);
+  }
+
+  .stocktake-page__mobile-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0.9rem 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .stocktake-page__diff-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    min-height: 32px;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--accent);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .stocktake-page__diff-badge--up {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+
+  .stocktake-page__diff-badge--down {
+    background: var(--danger-soft);
+    color: var(--danger);
+  }
+
+  .stocktake-page__submit-bar {
+    flex-direction: column;
+  }
 }
